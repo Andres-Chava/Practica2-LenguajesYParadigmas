@@ -169,10 +169,12 @@ public:
     double getBias() const { return bias; }
 };
 
+LinearRegression modelo_global;
+
 void load_csv(const string& filename, vector<vector<double> >& X, vector<double>& y, bool skip_header = true) {
     ifstream file(filename.c_str());
     if (!file.is_open()) {
-        cerr << "Error crítico: No se pudo abrir el archivo CSV -> " << filename << endl;
+        cerr << "Error critico: No se pudo abrir el archivo CSV -> " << filename << endl;
         return;
     }
     string line;
@@ -209,12 +211,45 @@ void train_test_split(const vector<vector<double> >& X, const vector<double>& y,
     y_test.assign(y.begin() + train_size, y.end());
 }
 
+void analisis_memoria() {
+    cout << "\n======================================================================" << endl;
+    cout << "   SECCION 3.2: ANALISIS DE MEMORIA (GLOBAL, LOCAL Y DINAMICA)" << endl;
+    cout << "======================================================================" << endl;
+
+    LinearRegression modelo_local;
+    LinearRegression* modelo_dinamico = new LinearRegression();
+
+    cout << "1. DIRECCIONES DE MEMORIA DE LOS OBJETOS:" << endl;
+    cout << "   -> Modelo en Memoria Global (Segmento Data/BSS): " << &modelo_global << endl;
+    cout << "   -> Modelo en Memoria Local (Stack / Pila):       " << &modelo_local << endl;
+    cout << "   -> Modelo en Memoria Dinamica (Heap / Puntero):  " << modelo_dinamico << endl;
+
+    cout << "\n2. TAMANOS DE LOS OBJETOS (sizeof):" << endl;
+    cout << "   -> Tamaño de una instancia LinearRegression: " << sizeof(LinearRegression) << " bytes." << endl;
+
+    int n_modelos = 5;
+    LinearRegression* vector_dinamico = new LinearRegression[n_modelos];
+    size_t tamano_vector = n_modelos * sizeof(LinearRegression);
+
+    cout << "\n3. VECTOR DE OBJETOS EN MEMORIA DINAMICA:" << endl;
+    cout << "   -> Direccion base del vector en Heap: " << vector_dinamico << endl;
+    cout << "   -> Cantidad de elementos: " << n_modelos << endl;
+    cout << "   -> Tamaño total calculado del arreglo dinamico: " << tamano_vector << " bytes." << endl;
+
+    delete modelo_dinamico;
+    delete[] vector_dinamico;
+    cout << "======================================================================\n" << endl;
+}
+
 int main() {
     cout << fixed << setprecision(4);
+
+    analisis_memoria();
 
     cout << "======================================================================" << endl;
     cout << "   PRACTICA 2: REGRESION LINEAL MULTIPLE CON ORIENTACION A OBJETOS" << endl;
     cout << "======================================================================" << endl;
+
     cout << "\n[ANALISIS 1] Dataset de Ventas de Helados (Regresion Simple)" << endl;
     cout << "----------------------------------------------------------------------" << endl;
     vector<vector<double> > X_ice;
@@ -234,6 +269,7 @@ int main() {
     cout << "-> Peso optimo de la pendiente (Weight / w1):   " << modelo_helados.getWeights()[0] << endl;
     cout << "-> Error Cuadratico Medio en Entrenamiento (Score Train): " << modelo_helados.score(X_tr_ice, y_tr_ice) << endl;
     cout << "-> Error Cuadratico Medio en Prueba (Score Test Externo): " << modelo_helados.score(X_te_ice, y_te_ice) << endl;
+
     cout << "\n[ANALISIS 2] Dataset de Calificaciones de Estudiantes (Regresion Multiple)" << endl;
     cout << "----------------------------------------------------------------------" << endl;
     vector<vector<double> > X_stud;
@@ -252,7 +288,7 @@ int main() {
     cout << "-> Muestras totales usadas para entrenamiento (70%): " << X_tr_stud.size() << endl;
     cout << "-> Muestras totales usadas para prueba/score (30%): " << X_te_stud.size() << endl;
     cout << "-> Intercepto optimo del modelo (Bias / b_op): " << modelo_estudiantes.getBias() << endl;
-    cout << "-> Vector de pesos óptimos para cada variable (Weights):" << endl;
+    cout << "-> Vector de pesos optimos para cada variable (Weights):" << endl;
     vector<double> pesos_est = modelo_estudiantes.getWeights();
     cout << "   [ Variable 1 (Horas estudio): " << pesos_est[0] << " ]" << endl;
     cout << "   [ Variable 2 (Horas sueño):   " << pesos_est[1] << " ]" << endl;
@@ -260,6 +296,8 @@ int main() {
     cout << "   [ Variable 4 (Notas previas): " << pesos_est[3] << " ]" << endl;
     cout << "-> Error Cuadratico Medio en Entrenamiento (Score Train): " << modelo_estudiantes.score(X_tr_stud, y_tr_stud) << endl;
     cout << "-> Error Cuadratico Medio en Prueba (Score Test Externo): " << modelo_estudiantes.score(X_te_stud, y_te_stud) << endl;
+
+
     vector<double> y_hat_prueba = modelo_estudiantes.predict(X_te_stud);
     cout << "\n[DEMOSTRACION] Comparacion de Predicciones vs Valores Reales (Primeras 3 muestras de Test):" << endl;
     for (int i = 0; i < 3 && i < (int)y_hat_prueba.size(); ++i) {
@@ -267,10 +305,5 @@ int main() {
              << " -> Calificacion Predicha (y_hat): " << y_hat_prueba[i] 
              << " | Calificacion Real en CSV (y): " << y_te_stud[i] << endl;
     }
-
-    cout << "\n======================================================================" << endl;
-    cout << "   EJECUCION FINALIZADA EXITOSAMENTE" << endl;
-    cout << "======================================================================" << endl;
-
     return 0;
 }
